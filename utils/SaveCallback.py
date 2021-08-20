@@ -1,9 +1,7 @@
 import os
-import gym
-from stable_baselines import results_plotter
-from stable_baselines.bench import Monitor
+import numpy as np
+
 from stable_baselines.results_plotter import load_results, ts2xy
-from stable_baselines.common.noise import AdaptiveParamNoiseSpec
 from stable_baselines.common.callbacks import BaseCallback
 
 

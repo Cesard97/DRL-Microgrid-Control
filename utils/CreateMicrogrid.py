@@ -33,7 +33,8 @@ def create_weak_grid_tf(SAIDI=121, SAIFI=120, step_size=0.5):
 
     return pd.DataFrame(grid_status, columns=['grid_status'])
 
-def create_microgrid(mg_gen, architecture = {'PV':1, 'battery':1, 'genset':0, 'grid':1, 'weak_grid': 0}):
+
+def create_microgrid(mg_gen, architecture={'PV':1, 'battery':1, 'genset':0, 'grid':1, 'weak_grid': 0}):
     """
     Creates a microgrid with own data based on specified archtiecture.
 

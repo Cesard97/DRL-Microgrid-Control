@@ -5,6 +5,7 @@ import pandas as pd
 from stable_baselines.bench import Monitor
 from utils.SaveCallback import SaveOnBestTrainingRewardCallback
 from pymgrid.Environments.pymgrid_cspla import MicroGridEnv as CsDaMicroGridEnv
+# from pymgrid.Environments.pymgrid_csca import ContinuousMicrogridEnv
 
 from stable_baselines import DQN, PPO2
 
@@ -13,7 +14,6 @@ class BaselinesDrlEmsAgents:
 
     def __init__(self, microgrid, path_prefix='TEST00', time_steps=30000):
         # Main Attributes
-        self.microgrid = microgrid
         self.time_steps = time_steps
 
         # Create log dir
@@ -24,6 +24,7 @@ class BaselinesDrlEmsAgents:
         os.makedirs(f"models/{self.dir_dis_PPO}", exist_ok=True)
 
         # Create discrete gym environment for microgrid
+        microgrid.train_test_split(train_size=0.7)
         discrete_env = CsDaMicroGridEnv({'microgrid': microgrid,
                                          'forecast_args': None,
                                          'resampling_on_reset': False,
@@ -37,7 +38,7 @@ class BaselinesDrlEmsAgents:
 
     def train_dqn_ems(self):
         print(f"Training DQN Based EMS for {self.time_steps} steps...")
-        self.env_DQN.reset()
+        self.env_DQN.reset(testing=False)
         # Create Model
         model = DQN('MlpPolicy', self.env_DQN, double_q=True, exploration_fraction=0.25, verbose=1)
         # Create the callback: check every 100 steps
@@ -50,7 +51,7 @@ class BaselinesDrlEmsAgents:
 
     def train_discrete_ppo_ems(self):
         print(f"Training Discrete PPO Based EMS for {self.time_steps} steps...")
-        self.env_dis_PPO.reset()
+        self.env_dis_PPO.reset(testing=False)
         # Create A2C Model
         model = PPO2('MlpPolicy', self.env_dis_PPO, verbose=1)
         # Create the callback: check every 100 steps
@@ -76,7 +77,7 @@ class BaselinesDrlEmsAgents:
         model = DQN.load(f"models/{self.dir_DQN}/best_model.zip")
         cost = []
         # Test DQN Agent
-        obs = self.env_DQN.reset(True)
+        obs = self.env_DQN.reset(testing=True)
         while not self.env_DQN.done:
             action, _states = model.predict(obs)
             obs, rewards, dones, info = self.env_DQN.step(action)
@@ -94,7 +95,7 @@ class BaselinesDrlEmsAgents:
         model = PPO2.load(f"models/{self.dir_dis_PPO}/best_model.zip")
         # Test best PPO Agent
         cost = []
-        obs = self.env_dis_PPO.reset(True)
+        obs = self.env_dis_PPO.reset(testing=True)
         while not self.env_dis_PPO.done:
             action, _states = model.predict(obs)
             obs, rewards, dones, info = self.env_dis_PPO.step(action)

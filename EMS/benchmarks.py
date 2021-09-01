@@ -34,7 +34,7 @@ class BenchmarkEms:
             try:
                 grid_is_up = mg_data['grid_status']
             except Exception as e:
-                print(f"Failed to load grid status: {e}")
+                # print(f"Failed to load grid status: {e}")
                 grid_is_up = False
 
             # Define constrains for battery
@@ -109,15 +109,13 @@ class BenchmarkEms:
         sample.index = np.arange(len(sample))
         output = mpc.run_mpc_on_sample(sample=sample, verbose=True)
         cost = output['cost']['cost']
+        print(output.keys())
 
         # Save results
         print("Finish Deterministic MPC Test")
         results = pd.DataFrame.from_dict({'costs': cost})
         results.to_csv(f"results/DeterministicMPC/{self.path_prefix}.csv")
         print(f"Results were saved under results/DeterministicMPC/{self.path_prefix} dir")
-        if plot_results:
-            fig1 = output.iplot(asFigure=True)
-            iplot(fig1)
 
         return results
 
@@ -129,7 +127,6 @@ class BenchmarkEms:
         self.microgrid.benchmarks.run_mpc_benchmark(verbose=True)
         outputs = pd.DataFrame(self.microgrid.benchmarks.outputs_dict)
         cost = np.array(outputs['mpc']['cost']['cost'])
-        print(outputs.keys())
 
         # Save results
         print("Finish Deterministic MPC Test")
@@ -139,7 +136,7 @@ class BenchmarkEms:
 
         return results
 
-    def test_all_benchmark_ems(self, plot_results=True):
+    def test_all_benchmark_ems(self, plot_results=False):
         """
         Test all implemented benchmarks.
         """

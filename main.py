@@ -1,6 +1,7 @@
 from pymgrid import MicrogridGenerator as mgen
 from EMS.benchmarks import BenchmarkEms
 from EMS.DRL import BaselinesDrlEmsAgents
+from results.result_plotter import ResultsPlotter
 
 
 def get_microgrid_configurations():
@@ -12,7 +13,7 @@ def get_microgrid_configurations():
     generator.generate_microgrid()
     generic_microgrids = generator.microgrids
     # Select 3 Generic configurations
-    selected_microgrids = [generic_microgrids[4]]
+    selected_microgrids = [generic_microgrids[6]]
 
     # Colombian Configurations
     # TODO
@@ -36,22 +37,25 @@ def test_all_ems(microgrids, save_dir="TEST00"):
         # Benchmark EMS Object for each mg
         benchmark_ems = BenchmarkEms(mg, f"{save_dir}-MG{i}")
         benchmark_ems.test_all_benchmark_ems()
-    """
+
     # Test all DRL EMS
     for i, mg in enumerate(microgrids):
         # Benchmark EMS Object for each mg
         drl_ems = BaselinesDrlEmsAgents(mg, f"{save_dir}-MG{i}")
         drl_ems.test_all_agents()
-    """
 
 
 if __name__ == '__main__':
     # Get microgrid configurations
     microgrids = get_microgrid_configurations()
     # Train All DRL EMS Agents
-    # train_drl_agents(microgrids, save_dir="TEST_CONT")
+    train_drl_agents(microgrids, save_dir="TEST00")
     # Test ALL EMS
     test_all_ems(microgrids, save_dir="TEST00")
+    # Plot Results
+    plotter = ResultsPlotter('TEST00-MG0')
+    plotter.plot_training()
+    plotter.plot_test()
 
 
 

@@ -12,7 +12,7 @@ from stable_baselines import DQN, PPO2
 
 class BaselinesDrlEmsAgents:
 
-    def __init__(self, microgrid, path_prefix='TEST00', time_steps=30000):
+    def __init__(self, microgrid, path_prefix='TEST00', time_steps=60000):
         # Main Attributes
         self.time_steps = time_steps
 
@@ -42,7 +42,7 @@ class BaselinesDrlEmsAgents:
         # Create Model
         model = DQN('MlpPolicy', self.env_DQN, double_q=True, exploration_fraction=0.25, verbose=1)
         # Create the callback: check every 100 steps
-        callback = SaveOnBestTrainingRewardCallback(check_freq=int(self.time_steps/10),
+        callback = SaveOnBestTrainingRewardCallback(check_freq=5000,
                                                     log_dir=f"models/{self.dir_DQN}")
         # Train Agent
         model.learn(total_timesteps=self.time_steps, callback=callback)

@@ -7,7 +7,7 @@ from utils.SaveCallback import SaveOnBestTrainingRewardCallback
 from pymgrid.Environments.pymgrid_cspla import MicroGridEnv as CsDaMicroGridEnv
 # from pymgrid.Environments.pymgrid_csca import ContinuousMicrogridEnv
 
-from stable_baselines import DQN, PPO2
+from stable_baselines import DQN, PPO2, A2C
 
 
 class BaselinesDrlEmsAgents:
@@ -19,9 +19,11 @@ class BaselinesDrlEmsAgents:
         # Create log dir
         self.dir_DQN = f"DQN/{path_prefix}"
         self.dir_dis_PPO = f"DiscretePPO/{path_prefix}"
+        self.dir_dis_A2C = f"DiscreteA2C/{path_prefix}"
 
         os.makedirs(f"models/{self.dir_DQN}", exist_ok=True)
         os.makedirs(f"models/{self.dir_dis_PPO}", exist_ok=True)
+        os.makedirs(f"models/{self.dir_dis_A2C}", exist_ok=True)
 
         # Create discrete gym environment for microgrid
         microgrid.train_test_split(train_size=0.7)
@@ -33,6 +35,7 @@ class BaselinesDrlEmsAgents:
         # Create environment and monitors for each algorithm
         self.env_DQN = Monitor(discrete_env, f"models/{self.dir_DQN}")
         self.env_dis_PPO = Monitor(discrete_env, f"models/{self.dir_dis_PPO}")
+        self.env_dis_A2C = Monitor(discrete_env, f"models/{self.dir_dis_A2C}")
 
     # ---------------------------- TRAINING ----------------------------
 
@@ -40,7 +43,7 @@ class BaselinesDrlEmsAgents:
         print(f"Training DQN Based EMS for {self.time_steps} steps...")
         self.env_DQN.reset(testing=False)
         # Create Model
-        model = DQN('MlpPolicy', self.env_DQN, double_q=True, exploration_fraction=0.25, verbose=1)
+        model = DQN('MlpPolicy', self.env_DQN, double_q=True, exploration_fraction=0.25, verbose=0)
         # Create the callback: check every 100 steps
         callback = SaveOnBestTrainingRewardCallback(check_freq=5000,
                                                     log_dir=f"models/{self.dir_DQN}")
@@ -53,10 +56,23 @@ class BaselinesDrlEmsAgents:
         print(f"Training Discrete PPO Based EMS for {self.time_steps} steps...")
         self.env_dis_PPO.reset(testing=False)
         # Create A2C Model
-        model = PPO2('MlpPolicy', self.env_dis_PPO, verbose=1)
+        model = PPO2('MlpPolicy', self.env_dis_PPO, verbose=0)
         # Create the callback: check every 100 steps
-        callback = SaveOnBestTrainingRewardCallback(check_freq=int(self.time_steps/10),
+        callback = SaveOnBestTrainingRewardCallback(check_freq=5000,
                                                     log_dir=f"models/{self.dir_dis_PPO}")
+        # Train Agent
+        model.learn(total_timesteps=self.time_steps, callback=callback)
+
+        return model
+
+    def train_discrete_a2c_ems(self):
+        print(f"Training Discrete A2C Based EMS for {self.time_steps} steps...")
+        self.env_dis_A2C.reset(testing=False)
+        # Create A2C Model
+        model = A2C('MlpPolicy', self.env_dis_A2C, verbose=0)
+        # Create the callback: check every 100 steps
+        callback = SaveOnBestTrainingRewardCallback(check_freq=5000,
+                                                    log_dir=f"models/{self.dir_dis_A2C}")
         # Train Agent
         model.learn(total_timesteps=self.time_steps, callback=callback)
 

@@ -101,7 +101,7 @@ class BenchmarkEms:
     def run_deterministic_mpc(self, plot_results=False):
         print("Running Deterministic MPC EMS...")
         # Run MPC benchmark on microgrid
-        self.microgrid.set_horizon(24)
+        self.microgrid.set_horizon(48)
         self.microgrid.reset(True)
 
         mpc = Control.ModelPredictiveControl(self.microgrid)
@@ -109,7 +109,6 @@ class BenchmarkEms:
         sample.index = np.arange(len(sample))
         output = mpc.run_mpc_on_sample(sample=sample, verbose=True)
         cost = output['cost']['cost']
-        print(output.keys())
 
         # Save results
         print("Finish Deterministic MPC Test")

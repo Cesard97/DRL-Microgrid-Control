@@ -4,6 +4,7 @@ from EMS.DRL import BaselinesDrlEmsAgents
 from results.result_plotter import ResultsPlotter
 
 import pandas as pd
+import time
 pd.set_option('display.max_columns', 20)
 
 
@@ -36,17 +37,17 @@ def train_drl_agents(microgrids, save_dir="TEST00"):
 def test_all_ems(microgrids, save_dir="TEST00"):
 
     # Test all benchmark EMS
-    for i, mg in enumerate(microgrids):
+    # for i, mg in enumerate(microgrids):
         # Benchmark EMS Object for each mg
-        benchmark_ems = BenchmarkEms(mg, f"{save_dir}-MG{i}")
+        # benchmark_ems = BenchmarkEms(mg, f"{save_dir}-MG{i}")
         # benchmark_ems.test_all_benchmark_ems()
-        benchmark_ems.run_deterministic_mpc()
+        # benchmark_ems.test_all_benchmark_ems()
 
     # Test all DRL EMS
     for i, mg in enumerate(microgrids):
-        # Benchmark EMS Object for each mg
-        # drl_ems = BaselinesDrlEmsAgents(mg, f"{save_dir}-MG{i}")
-        # drl_ems.test_all_agents()
+        # DRL EMS Object for each mg
+        drl_ems = BaselinesDrlEmsAgents(mg, f"{save_dir}-MG{i}")
+        drl_ems.test_all_agents()
         pass
 
 
@@ -58,11 +59,18 @@ if __name__ == '__main__':
     # Train All DRL EMS Agents
     # train_drl_agents(microgrids, save_dir="TEST00")
     # Test ALL EMS
-    test_all_ems(microgrids, save_dir="TEST00")
+    # start = time.time()
+    # test_all_ems(microgrids, save_dir="TEST00")
+    # end = time.time()
+    # print("TESTING TIME:")
+    # print(f"{end-start} seconds")
     # Plot Results
-    plotter.plot_training()
-    # plotter.plot_test()
-    plotter.print_summary_table(normalize=True)
+    # plotter.plot_training()
+    plotter.plot_costs()
+    plotter.plot_battery_usage()
+    plotter.print_costs_table(normalize=True)
+    plotter.print_renewable_use_table()
+    plotter.print_batt_cycle_table()
 
 
 

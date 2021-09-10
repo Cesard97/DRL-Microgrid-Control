@@ -40,13 +40,13 @@ class ResultsPlotter:
             plt.grid(True)
             plt.show()
 
-    def plot_test(self, metric='costs'):
+    def plot_costs(self):
         for i in range(0, self.N):
             # Plot data
             fig = plt.figure(figsize=(10, 7))
             for d in self.results_dirs:
-                data = pd.read_csv(f"./results/{d}/{self.path_prefix}-MG{i}.csv")[metric]
-                plt.plot(np.cumsum(data))
+                data = np.cumsum(pd.read_csv(f"./results/{d}/{self.path_prefix}-MG{i}.csv")['costs'])
+                plt.plot(data)
 
             # Labels
             plt.title(f'Cumulative Operational Cost ({self.path_prefix}-MG{i})', fontsize=20)
@@ -56,9 +56,23 @@ class ResultsPlotter:
             plt.grid(True)
             plt.show()
 
-    def print_summary_table(self, normalize=True):
-        # Metric
-        metric = 'costs'
+    def plot_battery_usage(self):
+        for i in range(0, self.N):
+            # Plot data
+            fig = plt.figure(figsize=(10, 7))
+            for d in self.results_dirs:
+                data = pd.read_csv(f"./results/{d}/{self.path_prefix}-MG{i}.csv")['batt_cycles']
+                plt.plot(data)
+
+            # Labels
+            plt.title(f'Normalized Battery Usage ({self.path_prefix}-MG{i})', fontsize=20)
+            plt.xlabel('Step', fontsize=15)
+            plt.ylabel('Normalized Power', fontsize=15)
+            plt.legend(self.results_dirs, fontsize=12)
+            plt.grid(True)
+            plt.show()
+
+    def print_costs_table(self, normalize=True):
         # Pandas Dataframe
         results_df = pd.DataFrame.from_dict({'Model': self.results_dirs})
         # Loop over mg
@@ -66,9 +80,8 @@ class ResultsPlotter:
             data = []
             # Loop over models
             for r in self.results_dirs:
-                data.append(
-                    np.round(np.sum(pd.read_csv(f"./results/{r}/{self.path_prefix}-MG{i}.csv")[metric].values), 2)
-                )
+                total_cost = np.sum(pd.read_csv(f"./results/{r}/{self.path_prefix}-MG{i}.csv")['costs'].values)
+                data.append(np.round(total_cost, 3))
 
             results_df[f'MG-{i}'] = data
 
@@ -82,6 +95,44 @@ class ResultsPlotter:
             results_df['Mean'] = results_df.drop('Model', axis=1).mean(axis=1)
         else:
             results_df['Sum'] = results_df.drop('Model', axis=1).sum(axis=1)
+        # Print results df
+        print(results_df)
+
+    def print_renewable_use_table(self):
+        # Pandas Dataframe
+        results_df = pd.DataFrame.from_dict({'Model': self.results_dirs})
+        # Loop over mg
+        for i in range(0, self.N):
+            data = []
+            # Loop over models
+            for r in self.results_dirs:
+                pv_consumed = np.sum(pd.read_csv(f"./results/{r}/{self.path_prefix}-MG{i}.csv")['pv_consumed'].values)
+                pv = np.sum(pd.read_csv(f"./results/{r}/{self.path_prefix}-MG{i}.csv")['pv'].values)
+                used_pv = pv_consumed/pv
+                data.append(np.round(used_pv, 3))
+
+            results_df[f'MG-{i}'] = data
+
+        results_df['Mean'] = results_df.drop('Model', axis=1).mean(axis=1)
+
+        # Print results df
+        print(results_df)
+
+    def print_batt_cycle_table(self):
+        # Pandas Dataframe
+        results_df = pd.DataFrame.from_dict({'Model': self.results_dirs})
+        # Loop over mg
+        for i in range(0, self.N):
+            data = []
+            # Loop over models
+            for r in self.results_dirs:
+                batt_cycles = np.abs(pd.read_csv(f"./results/{r}/{self.path_prefix}-MG{i}.csv")['batt_cycles'].values)
+                batt_cycles = np.sum(batt_cycles)
+                data.append(np.round(batt_cycles, 3))
+
+            results_df[f'MG-{i}'] = data
+
+        results_df['Mean'] = results_df.drop('Model', axis=1).mean(axis=1)
 
         # Print results df
         print(results_df)

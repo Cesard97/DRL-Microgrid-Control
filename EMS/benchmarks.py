@@ -6,6 +6,7 @@ from plotly.offline import iplot
 
 from pymgrid.algos import Control
 from pymgrid.utils import DataGenerator
+from utils.utils import get_metrics
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -41,6 +42,7 @@ class BenchmarkEms:
             p_disc = max(0, min(load - pv, capa_to_dischare, self.microgrid.battery.p_discharge_max))
             p_char = max(0, min(pv - load, capa_to_charge, self.microgrid.battery.p_charge_max))
 
+            control_dict = {}
             # Verify grid status
             if grid_is_up:
                 if load >= pv:
@@ -50,7 +52,7 @@ class BenchmarkEms:
                                     'grid_export': 0,
                                     'genset': 0,
                                     'pv_curtailed': 0,
-                                    'pv_consumed': min(pv, load),
+                                    'pv_consummed': min(pv, load),
                                     }
                 if load < pv:
                     control_dict = {'battery_charge': p_char,
@@ -60,7 +62,7 @@ class BenchmarkEms:
                                     'genset': 0,
                                     'pv_curtailed': 0,
                                     # 'pv_consummed': min(pv, load+p_char),
-                                    'pv_consumed': pv,
+                                    'pv_consummed': pv,
                                     }
             else:
                 if load >= pv:
@@ -70,7 +72,7 @@ class BenchmarkEms:
                                     'grid_export': 0,
                                     'genset': max(0, load - pv - p_disc),
                                     'pv_curtailed': 0,
-                                    'pv_consumed': min(pv, load),
+                                    'pv_consummed': min(pv, load),
                                     }
                 if load < pv:
                     control_dict = {'battery_charge': p_char,
@@ -79,24 +81,28 @@ class BenchmarkEms:
                                     'grid_export': 0,  # abs(min(load-pv,0)),
                                     'genset': 0,
                                     'pv_curtailed': max(0, pv - load - p_char),
-                                    'pv_consumed': pv,
+                                    'pv_consummed': pv,
                                     }
 
-            # you call run passing it your control_dict and it will return the mg_data for the next timestep
+            # Run and save costs
             mg_data = self.microgrid.run(control_dict)
             cost.append(self.microgrid.get_cost())
 
         # Save results
-        print("Finish Rule Based Test")
-        results = pd.DataFrame.from_dict({'costs': cost})
-        results.to_csv(f"results/RuleBased/{self.path_prefix}.csv")
-        print(f"Results were saved under results/RuleBased/{self.path_prefix} dir")
         # Plot control actions and actual production if requested
         if plot_results:
             self.microgrid.print_control()
             self.microgrid.print_actual_production()
 
-        return results
+        print("Finish Rule Based Test")
+        # Get metrics from production
+        metrics_df = get_metrics(self.microgrid)
+        # Add costs
+        metrics_df['costs'] = cost
+        metrics_df.to_csv(f"results/RuleBased/{self.path_prefix}.csv")
+        print(f"Results were saved under results/RuleBased/{self.path_prefix} dir")
+
+        return metrics_df
 
     def run_deterministic_mpc(self, plot_results=False):
         print("Running Deterministic MPC EMS...")
@@ -108,15 +114,19 @@ class BenchmarkEms:
         sample = DataGenerator.return_underlying_data(self.microgrid).iloc[-2650:-1]
         sample.index = np.arange(len(sample))
         output = mpc.run_mpc_on_sample(sample=sample, verbose=True)
-        cost = output['cost']['cost']
+
+        # Get metrics from production
+        print(output.keys())
+        metrics_df = get_metrics(self.microgrid, output=output)
+        # Add costs
+        metrics_df['costs'] = output['cost']['cost']
 
         # Save results
         print("Finish Deterministic MPC Test")
-        results = pd.DataFrame.from_dict({'costs': cost})
-        results.to_csv(f"results/DeterministicMPC/{self.path_prefix}.csv")
+        metrics_df.to_csv(f"results/DeterministicMPC/{self.path_prefix}.csv")
         print(f"Results were saved under results/DeterministicMPC/{self.path_prefix} dir")
 
-        return results
+        return metrics_df
 
     def run_deterministic_mpc_2(self, plot_results=False):
         print("Running Deterministic MPC EMS...")
@@ -126,7 +136,6 @@ class BenchmarkEms:
         self.microgrid.benchmarks.run_mpc_benchmark(verbose=True)
         outputs = pd.DataFrame(self.microgrid.benchmarks.outputs_dict)
         cost = np.array(outputs['mpc']['cost']['cost'])
-
         # Save results
         print("Finish Deterministic MPC Test")
         results = pd.DataFrame.from_dict({'costs': cost})

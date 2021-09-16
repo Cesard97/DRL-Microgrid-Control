@@ -88,13 +88,15 @@ class ResultsPlotter:
         # Normalize against DeterministicMPC
         if normalize:
             for i in range(0, self.N):
-                results_df[f'MG-{i}'] = results_df[f'MG-{i}'].div(results_df.iloc[0][f'MG-{i}'])
+                results_df[f'MG-{i}'] = results_df[f'MG-{i}'].div(results_df.iloc[1][f'MG-{i}'])
 
         # Add Avg. Column
         if normalize:
             results_df['Mean'] = results_df.drop('Model', axis=1).mean(axis=1)
+            print("TOTAL OPERATIONAL COSTS (USD)")
         else:
             results_df['Sum'] = results_df.drop('Model', axis=1).sum(axis=1)
+            print("TOTAL OPERATIONAL COSTS (Normalized respect to MPC)")
         # Print results df
         print(results_df)
 
@@ -116,6 +118,7 @@ class ResultsPlotter:
         results_df['Mean'] = results_df.drop('Model', axis=1).mean(axis=1)
 
         # Print results df
+        print('% OF RENEWABLE USAGE')
         print(results_df)
 
     def print_batt_cycle_table(self):
@@ -135,10 +138,33 @@ class ResultsPlotter:
         results_df['Mean'] = results_df.drop('Model', axis=1).mean(axis=1)
 
         # Print results df
+        print('EQUIVALENT BATTERY CYCLES')
+        print(results_df)
+
+    def print_power_derivative_table(self, metric='average'):
+        # Pandas Dataframe
+        results_df = pd.DataFrame.from_dict({'Model': self.results_dirs})
+        # Loop over mg
+        for i in range(0, self.N):
+            data = []
+            # Loop over models
+            for r in self.results_dirs:
+                grid_curve = np.abs(pd.read_csv(f"./results/{r}/{self.path_prefix}-MG{i}.csv")['grid_curve'].values)
+                if metric == 'max':
+                    power_diff = np.max(np.diff(grid_curve))
+                else:
+                    power_diff = np.mean(np.diff(grid_curve))
+                data.append(power_diff)
+
+            results_df[f'MG-{i}'] = data
+
+        results_df['Mean'] = results_df.drop('Model', axis=1).mean(axis=1)
+        # Print results df
+        print('POWER GRID CYCLES')
         print(results_df)
 
 
 if __name__ == '__main__':
     plotter = ResultsPlotter('TEST00-MG0')
     plotter.plot_training()
-    plotter.plot_test()
+    plotter.plot_costs()

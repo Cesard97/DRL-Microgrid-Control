@@ -116,7 +116,6 @@ class BenchmarkEms:
         output = mpc.run_mpc_on_sample(sample=sample, verbose=True)
 
         # Get metrics from production
-        print(output.keys())
         metrics_df = get_metrics(self.microgrid, output=output)
         # Add costs
         metrics_df['costs'] = output['cost']['cost']
@@ -128,8 +127,8 @@ class BenchmarkEms:
 
         return metrics_df
 
-    def run_deterministic_mpc_2(self, plot_results=False):
-        print("Running Deterministic MPC EMS...")
+    def run_saa_mpc(self, plot_results=False):
+        print("Running SAA MPC EMS...")
         # Run MPC benchmark on microgrid
         self.microgrid.set_horizon(24)
         self.microgrid.reset(True)
@@ -137,10 +136,10 @@ class BenchmarkEms:
         outputs = pd.DataFrame(self.microgrid.benchmarks.outputs_dict)
         cost = np.array(outputs['mpc']['cost']['cost'])
         # Save results
-        print("Finish Deterministic MPC Test")
+        print("Finish Deterministic SAA MPC Test")
         results = pd.DataFrame.from_dict({'costs': cost})
-        results.to_csv(f"results/DeterministicMPC/{self.path_prefix}.csv")
-        print(f"Results were saved under results/DeterministicMPC/{self.path_prefix} dir")
+        results.to_csv(f"results/SAA_MPC/{self.path_prefix}.csv")
+        print(f"Results were saved under results/SAA_MPC/{self.path_prefix} dir")
 
         return results
 

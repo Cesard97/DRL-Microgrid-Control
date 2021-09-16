@@ -16,8 +16,9 @@ def get_microgrid_configurations():
     generator = mgen.MicrogridGenerator(nb_microgrid=10)
     generator.generate_microgrid()
     generic_microgrids = generator.microgrids
-    # Select 3 Generic configurations
-    selected_microgrids = generic_microgrids[0:7]
+    # Select 6 Generic configurations
+
+    selected_microgrids = generic_microgrids[0:3] + generic_microgrids[6:9]
 
     # Colombian Configurations
     # TODO
@@ -34,7 +35,7 @@ def train_drl_agents(microgrids, save_dir="TEST00"):
         ems_agents.train_all_agents()
 
 
-def test_all_ems(microgrids, save_dir="TEST00"):
+def test_ems(microgrids, save_dir="TEST00"):
 
     # Test all benchmark EMS
     # for i, mg in enumerate(microgrids):
@@ -47,31 +48,28 @@ def test_all_ems(microgrids, save_dir="TEST00"):
     for i, mg in enumerate(microgrids):
         # DRL EMS Object for each mg
         drl_ems = BaselinesDrlEmsAgents(mg, f"{save_dir}-MG{i}")
-        drl_ems.test_all_agents()
-        pass
+        drl_ems.test_continuous_ppo_ems()
 
 
 if __name__ == '__main__':
 
     plotter = ResultsPlotter('TEST00')
     # Get microgrid configurations
-    microgrids = get_microgrid_configurations()
+    # microgrids = get_microgrid_configurations()
     # Train All DRL EMS Agents
     # train_drl_agents(microgrids, save_dir="TEST00")
     # Test ALL EMS
     # start = time.time()
-    # test_all_ems(microgrids, save_dir="TEST00")
+    # test_ems(microgrids, save_dir="TEST00")
     # end = time.time()
     # print("TESTING TIME:")
     # print(f"{end-start} seconds")
     # Plot Results
-    # plotter.plot_training()
+    plotter.plot_training()
     plotter.plot_costs()
     plotter.plot_battery_usage()
+    # Print summary tables
     plotter.print_costs_table(normalize=True)
     plotter.print_renewable_use_table()
     plotter.print_batt_cycle_table()
-
-
-
-
+    plotter.print_power_derivative_table(metric='max')

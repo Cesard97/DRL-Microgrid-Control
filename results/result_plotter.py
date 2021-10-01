@@ -16,7 +16,7 @@ class ResultsPlotter:
     def __init__(self, path_prefix='TEST00'):
         # Attributes
         self.path_prefix = path_prefix
-        self.N = 7
+        self.N = 6
         # Get all results in results folder
         self.results_dirs = os.listdir('./results')
         self.results_dirs.remove('result_plotter.py')
@@ -26,7 +26,7 @@ class ResultsPlotter:
     def plot_training(self):
         for i in range(0, self.N):
             # Plot data
-            fig = plt.figure(figsize=(10, 7))
+            fig = plt.figure(figsize=(12, 8))
 
             for d in self.model_dirs:
                 x, y = ts2xy(load_results(f"./models/{d}/{self.path_prefix}-MG{i}/"), 'timesteps')
@@ -43,7 +43,7 @@ class ResultsPlotter:
     def plot_costs(self):
         for i in range(0, self.N):
             # Plot data
-            fig = plt.figure(figsize=(10, 7))
+            fig = plt.figure(figsize=(12, 8))
             for d in self.results_dirs:
                 data = np.cumsum(pd.read_csv(f"./results/{d}/{self.path_prefix}-MG{i}.csv")['costs'])
                 plt.plot(data)
@@ -59,7 +59,7 @@ class ResultsPlotter:
     def plot_battery_usage(self):
         for i in range(0, self.N):
             # Plot data
-            fig = plt.figure(figsize=(10, 7))
+            fig = plt.figure(figsize=(12, 8))
             for d in self.results_dirs:
                 data = pd.read_csv(f"./results/{d}/{self.path_prefix}-MG{i}.csv")['batt_cycles']
                 plt.plot(data)
@@ -88,7 +88,7 @@ class ResultsPlotter:
         # Normalize against DeterministicMPC
         if normalize:
             for i in range(0, self.N):
-                results_df[f'MG-{i}'] = results_df[f'MG-{i}'].div(results_df.iloc[1][f'MG-{i}'])
+                results_df[f'MG-{i}'] = results_df[f'MG-{i}'].div(results_df.iloc[3][f'MG-{i}'])
 
         # Add Avg. Column
         if normalize:
@@ -141,7 +141,7 @@ class ResultsPlotter:
         print('EQUIVALENT BATTERY CYCLES')
         print(results_df)
 
-    def print_power_derivative_table(self, metric='average'):
+    def print_power_derivative_table(self, metric='avg'):
         # Pandas Dataframe
         results_df = pd.DataFrame.from_dict({'Model': self.results_dirs})
         # Loop over mg

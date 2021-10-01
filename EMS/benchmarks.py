@@ -18,6 +18,7 @@ class BenchmarkEms:
         self.microgrid = microgrid
         self.microgrid.train_test_split(train_size=0.7)
         self.path_prefix = path_prefix
+        self.test_index = 2650
 
     def run_rule_based(self, plot_results=False):
         print("Running Rule Based EMS...")
@@ -106,13 +107,15 @@ class BenchmarkEms:
 
     def run_deterministic_mpc(self, plot_results=False):
         print("Running Deterministic MPC EMS...")
-        # Run MPC benchmark on microgrid
+        # Reset Microgrid
         self.microgrid.set_horizon(48)
         self.microgrid.reset(True)
-
         mpc = Control.ModelPredictiveControl(self.microgrid)
-        sample = DataGenerator.return_underlying_data(self.microgrid).iloc[-2650:-1]
+
+        # Get sample data
+        sample = DataGenerator.return_underlying_data(self.microgrid).iloc[-self.test_index:-1]
         sample.index = np.arange(len(sample))
+        # Run MPC
         output = mpc.run_mpc_on_sample(sample=sample, verbose=True)
 
         # Get metrics from production
@@ -122,26 +125,70 @@ class BenchmarkEms:
 
         # Save results
         print("Finish Deterministic MPC Test")
-        metrics_df.to_csv(f"results/DeterministicMPC/{self.path_prefix}.csv")
-        print(f"Results were saved under results/DeterministicMPC/{self.path_prefix} dir")
+        metrics_df.to_csv(f"results/MPC_Deterministic/{self.path_prefix}.csv")
+        print(f"Results were saved under results/MPC_Deterministic/{self.path_prefix} dir")
 
         return metrics_df
 
-    def run_saa_mpc(self, plot_results=False):
+    def run_realistic_mpc(self, plot_results=False):
+        print("Running Realistic MPC EMS...")
+        # Reset Microgrid
+        self.microgrid.set_horizon(24)
+        self.microgrid.reset(False)
+        saa = Control.SampleAverageApproximation(self.microgrid)
+        # saa.run()
+        # Add Gaussian Noise to generate N samples
+        samples = []
+        for i in range(0, 10):
+            # Get sample data
+            sample = DataGenerator.return_underlying_data(self.microgrid)  # .iloc[-self.test_index:-1]
+            sample.index = np.arange(len(sample))
+            # Load Noise
+            load_noise = np.random.normal(0, 0.02 * np.max(sample['load']), [len(sample), ])
+            sample['load'] = sample['load'] + load_noise
+            # PV noise
+            pv_noise = np.random.normal(0, 0.15 * np.max(sample['pv']), [len(sample), ])
+            pv_noise[sample['pv'] <= 0] = 0
+            sample['pv'] = sample['pv'] + pv_noise
+
+            samples.append(sample)
+
+        # Run MPC
+        samples = saa.sample_from_forecasts(n_samples=15)
+        output = saa.run_mpc_on_group(samples=samples, forecast_steps=None, verbose=False)
+
+        # Get metrics from production
+        metrics_df = get_metrics(self.microgrid, output=output)
+        # Add costs
+        metrics_df['costs'] = output['cost']['cost']
+
+        # Save results
+        print("Finish Realistic MPC Test")
+        metrics_df.tail(2628).to_csv(f"results/MPC_Realistic/{self.path_prefix}.csv")
+        print(f"Results were saved under results/MPC_Realistic/{self.path_prefix} dir")
+
+        return metrics_df
+
+    def run_saa_mpc_2(self, plot_results=False):
         print("Running SAA MPC EMS...")
         # Run MPC benchmark on microgrid
         self.microgrid.set_horizon(24)
         self.microgrid.reset(True)
-        self.microgrid.benchmarks.run_mpc_benchmark(verbose=True)
-        outputs = pd.DataFrame(self.microgrid.benchmarks.outputs_dict)
-        cost = np.array(outputs['mpc']['cost']['cost'])
+        self.microgrid.benchmarks.run_saa_benchmark()
+        outputs = pd.DataFrame(self.microgrid.benchmarks.outputs_dict)['saa']
         # Save results
-        print("Finish Deterministic SAA MPC Test")
-        results = pd.DataFrame.from_dict({'costs': cost})
-        results.to_csv(f"results/SAA_MPC/{self.path_prefix}.csv")
+        print("Finish Sample Average Approximation MPC Test")
+
+        # Get metrics from production
+        metrics_df = get_metrics(self.microgrid, output=outputs).iloc[-self.test_index:-1]
+        metrics_df.index = np.arange(len(metrics_df))
+        # Add costs
+        metrics_df['costs'] = outputs['cost']['cost'][-self.test_index:-1]
+
+        metrics_df.to_csv(f"results/SaaMPC/{self.path_prefix}.csv")
         print(f"Results were saved under results/SAA_MPC/{self.path_prefix} dir")
 
-        return results
+        return metrics_df
 
     def test_all_benchmark_ems(self, plot_results=False):
         """
@@ -149,3 +196,4 @@ class BenchmarkEms:
         """
         self.run_rule_based(plot_results)
         self.run_deterministic_mpc(plot_results)
+        self.run_realistic_mpc(plot_results)

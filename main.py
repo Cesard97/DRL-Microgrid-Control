@@ -44,10 +44,15 @@ def test_ems(microgrids, save_dir="TEST00"):
         drl_ems.test_all_agents()
 
     # Test all benchmark EMS
-    # for i, mg in enumerate(microgrids):
+    for i, mg in enumerate(microgrids):
         # Benchmark EMS Object for each mg
-    #    benchmark_ems = BenchmarkEms(mg, f"{save_dir}-MG{i}")
-    #    benchmark_ems.test_all_benchmark_ems()
+        benchmark_ems = BenchmarkEms(mg, f"{save_dir}-MG{i}")
+        benchmark_ems.test_all_benchmark_ems()
+
+
+def optimize_parameters(microgrid, save_dir="Hyper_Opt"):
+    drl_ems = BaselinesDrlEmsAgents(microgrid, save_dir)
+    drl_ems.optimize_parameters()
 
 
 if __name__ == '__main__':
@@ -56,24 +61,27 @@ if __name__ == '__main__':
     microgrids = get_microgrid_configurations()
 
     # Train All DRL EMS Agents
-    train_drl_agents(microgrids, save_dir="TEST01")
+    # train_drl_agents(microgrids, save_dir="TEST01")
+
+    # Optimize parameters
+    optimize_parameters(microgrids[0])
 
     # Test ALL EMS
-    start = time.time()
-    test_ems(microgrids, save_dir="TEST01")
-    end = time.time()
-    print("TESTING TIME:")
-    print(f"{end-start} seconds")
+    # start = time.time()
+    # test_ems(microgrids, save_dir="TEST01")
+    # end = time.time()
+    # print("TESTING TIME:")
+    # print(f"{end-start} seconds")
 
     # Plot Results
-    plotter = ResultsPlotter('TEST01')
-    plotter.plot_training()
-    plotter.plot_costs()
+    # plotter = ResultsPlotter('TEST01')
+    # plotter.plot_training()
+    # plotter.plot_costs()
     # plotter.plot_battery_usage()
 
     # Print summary tables
-    plotter.print_costs_table(normalize=True)
-    plotter.print_renewable_use_table()
-    plotter.print_batt_cycle_table()
-    plotter.print_power_derivative_table(metric='max')
+    # plotter.print_costs_table(normalize=True)
+    # plotter.print_renewable_use_table()
+    # plotter.print_batt_cycle_table()
+    # plotter.print_power_derivative_table(metric='max')
 

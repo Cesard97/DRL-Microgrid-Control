@@ -1,5 +1,6 @@
 import os
 import time
+import optuna
 import warnings
 import numpy as np
 import pandas as pd
@@ -9,6 +10,7 @@ import matplotlib.pyplot as plt
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from stable_baselines.results_plotter import load_results, ts2xy
+from optuna import visualization
 
 
 class ResultsPlotter:
@@ -21,6 +23,7 @@ class ResultsPlotter:
         self.results_dirs = os.listdir('./results')
         self.results_dirs.remove('result_plotter.py')
         self.results_dirs.remove('__pycache__')
+        self.results_dirs.remove('summary')
         self.model_dirs = os.listdir('./models')
 
     def plot_training(self):
@@ -98,6 +101,7 @@ class ResultsPlotter:
             results_df['Sum'] = results_df.drop('Model', axis=1).sum(axis=1)
             print("TOTAL OPERATIONAL COSTS (Normalized respect to MPC)")
         # Print results df
+        results_df.to_csv(f"./results/summary/costs-{self.path_prefix}.csv", sep=';')
         print(results_df)
 
     def print_renewable_use_table(self):
@@ -119,6 +123,7 @@ class ResultsPlotter:
 
         # Print results df
         print('% OF RENEWABLE USAGE')
+        results_df.to_csv(f"./results/summary/renewable-{self.path_prefix}.csv", sep=';')
         print(results_df)
 
     def print_batt_cycle_table(self):
@@ -139,6 +144,7 @@ class ResultsPlotter:
 
         # Print results df
         print('EQUIVALENT BATTERY CYCLES')
+        results_df.to_csv(f"./results/summary/batt_cycles-{self.path_prefix}.csv", sep=';')
         print(results_df)
 
     def print_power_derivative_table(self, metric='avg'):
@@ -161,7 +167,18 @@ class ResultsPlotter:
         results_df['Mean'] = results_df.drop('Model', axis=1).mean(axis=1)
         # Print results df
         print('POWER GRID CYCLES')
+        results_df.to_csv(f"./results/summary/grid_cycles-{self.path_prefix}.csv", sep=';')
         print(results_df)
+
+    def plot_hyperparameter_optimization(self, rl_algorithm='DQN'):
+        # Load study
+        study = optuna.load_study(study_name=f"{rl_algorithm}_Opt", storage="sqlite:///Hyper_Opt.db")
+        # Print best results
+        print("Best value: {} (params: {})\n".format(study.best_value, study.best_params))
+        # Plot history
+        visualization.plot_optimization_history(study)
+        # Plot param importance
+        visualization.plot_param_importances(study)
 
 
 if __name__ == '__main__':
